@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"log/slog"
@@ -10,7 +9,6 @@ import (
 	"url_shortener/internal/config"
 	"url_shortener/internal/http-server/handlers/redirect"
 	"url_shortener/internal/http-server/handlers/url/save"
-	"url_shortener/internal/lib/logger/handlers/slogpretty"
 	"url_shortener/internal/lib/logger/sl"
 	"url_shortener/internal/storage/sqlite"
 )
@@ -24,8 +22,6 @@ const (
 func main() {
 
 	cfg := config.MustLoad()
-
-	fmt.Println(cfg)
 
 	log := setupLogger(cfg.Env)
 	log.Info("starting application", slog.String("env", cfg.Env))
@@ -79,16 +75,19 @@ func setupLogger(env string) *slog.Logger {
 	var log *slog.Logger
 	switch env {
 	case envLocal:
-		log = setupPrettySlog()
+		log = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	case envDev:
+
 		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
 	case envProd:
+
 		log = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
 
 	}
 	return log
 }
 
+/*
 func setupPrettySlog() *slog.Logger {
 	opts := slogpretty.PrettyHandlerOptions{
 		SlogOpts: &slog.HandlerOptions{
@@ -99,3 +98,7 @@ func setupPrettySlog() *slog.Logger {
 	handler := opts.NewPrettyHandler(os.Stdout)
 	return slog.New(handler)
 }
+
+// func for setting up JSON logger
+
+*/
