@@ -1,11 +1,13 @@
 package main
 
 import (
+	"context"
 	"github.com/go-chi/chi"
 	"github.com/go-chi/chi/middleware"
 	"log/slog"
 	"net/http"
 	"os"
+	authgrpc "url_shortener/internal/clients/auth/grps"
 	"url_shortener/internal/config"
 	"url_shortener/internal/http-server/handlers/redirect"
 	"url_shortener/internal/http-server/handlers/url/save"
@@ -27,6 +29,19 @@ func main() {
 	log.Info("starting application", slog.String("env", cfg.Env))
 	log.Debug("debug messages are enabled")
 	log.Error("error messages are enabled")
+
+	authClient, err := authgrpc.New(
+		context.Background(),
+		log,
+		cfg.Clients.Auth.Address,
+		cfg.Clients.Auth.Timeout,
+		cfg.Clients.Auth.RetriesCount,
+	)
+	if err != nil {
+		log.Error("failed to connect client", sl.Err(err))
+		os.Exit(1)
+	}
+	authClient.IsAdmin(context.Background(), 1)
 
 	storage, err := sqlite.New(cfg.StoragePath)
 	if err != nil {
@@ -86,19 +101,3 @@ func setupLogger(env string) *slog.Logger {
 	}
 	return log
 }
-
-/*
-func setupPrettySlog() *slog.Logger {
-	opts := slogpretty.PrettyHandlerOptions{
-		SlogOpts: &slog.HandlerOptions{
-			Level: slog.LevelDebug,
-		},
-	}
-
-	handler := opts.NewPrettyHandler(os.Stdout)
-	return slog.New(handler)
-}
-
-// func for setting up JSON logger
-
-*/
